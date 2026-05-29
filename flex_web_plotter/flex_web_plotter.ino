@@ -1,63 +1,90 @@
 // ============================================================
-// HandGlow Firmware v2.0 — Flex Sensors + Dual MPU6050 (Accel + Gyro)
+// HandGlow Firmware v3.0 — BLE + Multiplexer + Dual MPU6050
 // ============================================================
-// --- Finger-to-Pin Mapping ---
-// Right Hand: Thumb=D15, Index=D4,  Middle=D34, Ring=D35, Pinky=D32
-// Left  Hand: Thumb=D33, Index=D25, Middle=D26, Ring=D27,  Pinky=D14
+// COMMUNICATION:
+//   BLE GATT Server — Service 0xFFE0, Characteristic 0xFFE1 (Notify)
+//   Also outputs to Serial for debugging
+//
+// --- CD74HC4067 16-Channel Multiplexer ---
+// S0=GPIO16, S1=GPIO17, S2=GPIO5, S3=GPIO18, SIG=GPIO36 (ADC1!)
+// Channels 0-9 → 10 flex sensors (Right: 0-4, Left: 5-9)
 //
 // --- MPU6050 I2C Addresses ---
 // Right Hand MPU: AD0 → 3V3 → address 0x69
 // Left  Hand MPU: AD0 → GND → address 0x68
 //
-// --- Serial Output (22 channels) ---
-// DATA,RT:val,RI:val,...,LP:val,aX1,aY1,aZ1,gX1,gY1,gZ1,aX2,aY2,aZ2,gX2,gY2,gZ2
-//      └── 10 flex sensors ──┘  └── Right MPU (0x69) ──┘  └── Left MPU (0x68) ──┘
+// --- BLE Binary Payload (88 bytes) ---
+// 10 × float (flex sensors) + 12 × float (IMU) = 22 floats × 4 bytes
 // ============================================================
 
 #include <Wire.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
+
+// ─── BLE Config ───
+#define BLE_DEVICE_NAME    "HandGlow"
+#define SERVICE_UUID       "0000ffe0-0000-1000-8000-00805f9b34fb"
+#define CHAR_UUID          "0000ffe1-0000-1000-8000-00805f9b34fb"
+
+BLEServer*         pServer         = nullptr;
+BLECharacteristic* pCharacteristic = nullptr;
+bool               bleConnected    = false;
+bool               oldConnected    = false;
+
+// BLE connection callbacks
+class ServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) override {
+    bleConnected = true;
+    Serial.println("[BLE] Client connected");
+  }
+  void onDisconnect(BLEServer* pServer) override {
+    bleConnected = false;
+    Serial.println("[BLE] Client disconnected");
+  }
+};
 
 // ─── MPU6050 Addresses ───
 const uint8_t MPU_RIGHT = 0x69;  // Right hand (AD0 → 3V3)
 const uint8_t MPU_LEFT  = 0x68;  // Left hand  (AD0 → GND)
 
-// ─── Flex Sensor Config ───
+// ─── CD74HC4067 Multiplexer Pins ───
+// IMPORTANT: SIG must be on ADC1 (GPIO 32-39) because ADC2 doesn't work with BLE/WiFi
+const int MUX_S0  = 16;   // Channel select bit 0
+const int MUX_S1  = 17;   // Channel select bit 1
+const int MUX_S2  = 5;    // Channel select bit 2
+const int MUX_S3  = 18;   // Channel select bit 3
+const int MUX_SIG = 36;   // Analog input (VP pin, ADC1_CH0)
+
+// ─── Flex Sensor → Mux Channel Mapping ───
 const int numFlexSensors = 10;
 
-const int flexPins[numFlexSensors] = {
-  15,  // Right Thumb
-  4,   // Right Index
-  34,  // Right Middle
-  35,  // Right Ring
-  32,  // Right Pinky
-  33,  // Left Thumb
-  25,  // Left Index
-  26,  // Left Middle
-  27,  // Left Ring
-  14   // Left Pinky
+// Which mux channel (0-15) maps to which finger
+const int fingerChannel[numFlexSensors] = {
+  0,   // Right Thumb
+  1,   // Right Index
+  2,   // Right Middle
+  3,   // Right Ring
+  4,   // Right Pinky
+  5,   // Left Thumb
+  6,   // Left Index
+  7,   // Left Middle
+  8,   // Left Ring
+  9    // Left Pinky
 };
 
 const char* fingerNames[numFlexSensors] = {
-  "RT", // Right Thumb
-  "RI", // Right Index
-  "RM", // Right Middle
-  "RR", // Right Ring
-  "RP", // Right Pinky
-  "LT", // Left Thumb
-  "LI", // Left Index
-  "LM", // Left Middle
-  "LR", // Left Ring
-  "LP"  // Left Pinky
+  "RT", "RI", "RM", "RR", "RP",
+  "LT", "LI", "LM", "LR", "LP"
 };
 
 // ─── Smoothing (EMA Filter) ───
 const float alpha = 0.15;
 float smoothedValues[numFlexSensors];
 
-// ─── Hardware Settings ───
-const bool invertData = false;
-
 // ─── Sampling Rate ───
-const unsigned long SAMPLE_INTERVAL_MS = 40;  // 25 Hz (was 50ms)
+const unsigned long SAMPLE_INTERVAL_MS = 40;  // 25 Hz
 unsigned long lastSampleTime = 0;
 
 // ─── IMU Data Structure ───
@@ -70,6 +97,25 @@ struct IMUData {
 // ─── MPU6050 Status ───
 bool mpuRightOk = false;
 bool mpuLeftOk  = false;
+
+// ─── LED for status indication ───
+const int LED_PIN = 2;  // Built-in LED on most ESP32 boards
+
+// ============================================================
+// Read a specific multiplexer channel
+// ============================================================
+int readMuxChannel(int channel) {
+  // Set the 4-bit address
+  digitalWrite(MUX_S0, (channel >> 0) & 1);
+  digitalWrite(MUX_S1, (channel >> 1) & 1);
+  digitalWrite(MUX_S2, (channel >> 2) & 1);
+  digitalWrite(MUX_S3, (channel >> 3) & 1);
+
+  // Let the mux settle (CD74HC4067 switching time is ~70ns, 5µs is very safe)
+  delayMicroseconds(5);
+
+  return analogRead(MUX_SIG);
+}
 
 // ============================================================
 // Initialize a single MPU6050
@@ -106,7 +152,6 @@ bool initMPU(uint8_t addr) {
 
 // ============================================================
 // Read full IMU data (accel + gyro) from MPU6050
-// Reads 14 bytes: accel(6) + temp(2) + gyro(6)
 // ============================================================
 IMUData readIMU(uint8_t addr) {
   IMUData d = {0, 0, 0, 0, 0, 0, false};
@@ -147,41 +192,85 @@ IMUData readIMU(uint8_t addr) {
 // ============================================================
 void setup() {
   Serial.begin(115200);
+  Serial.println();
+  Serial.println("HandGlow v3.0 — BLE + Mux + Dual MPU6050");
+  Serial.println("==========================================");
 
-  // Initialize I2C
+  // ── LED ──
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  // ── Multiplexer control pins ──
+  pinMode(MUX_S0, OUTPUT);
+  pinMode(MUX_S1, OUTPUT);
+  pinMode(MUX_S2, OUTPUT);
+  pinMode(MUX_S3, OUTPUT);
+  // MUX_SIG is analog input, no pinMode needed
+
+  // Pre-fill smoothing array by reading each mux channel
+  for (int i = 0; i < numFlexSensors; i++) {
+    smoothedValues[i] = readMuxChannel(fingerChannel[i]);
+  }
+
+  // ── I2C ──
   Wire.begin(21, 22);  // SDA=21, SCL=22 (ESP32 default)
   Wire.setClock(400000); // 400kHz fast mode
 
-  // Pre-fill smoothing array
-  for (int i = 0; i < numFlexSensors; i++) {
-    smoothedValues[i] = analogRead(flexPins[i]);
-  }
-
-  // Initialize MPU6050 sensors
   delay(100);  // Let MPUs power up
 
+  // ── Initialize MPU6050 sensors ──
   mpuRightOk = initMPU(MPU_RIGHT);
   mpuLeftOk  = initMPU(MPU_LEFT);
 
-  Serial.println("HandGlow v2.0 - Flex + Dual MPU6050 (Accel+Gyro)");
   Serial.print("MPU Right (0x69): ");
   Serial.println(mpuRightOk ? "OK" : "FAIL");
   Serial.print("MPU Left  (0x68): ");
   Serial.println(mpuLeftOk ? "OK" : "FAIL");
+  Serial.print("Mux SIG pin: GPIO");
+  Serial.print(MUX_SIG);
+  Serial.println(" (ADC1)");
 
-  // Print header row
-  // Format: DATA,RT(D15),...,LP(D14),aX1,aY1,aZ1,gX1,gY1,gZ1,aX2,aY2,aZ2,gX2,gY2,gZ2
+  // ── Initialize BLE ──
+  Serial.println("[BLE] Initializing...");
+  BLEDevice::init(BLE_DEVICE_NAME);
+
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new ServerCallbacks());
+
+  BLEService* pService = pServer->createService(SERVICE_UUID);
+
+  pCharacteristic = pService->createCharacteristic(
+    CHAR_UUID,
+    BLECharacteristic::PROPERTY_READ |
+    BLECharacteristic::PROPERTY_NOTIFY
+  );
+
+  // Add the BLE2902 descriptor for notifications
+  pCharacteristic->addDescriptor(new BLE2902());
+
+  pService->start();
+
+  // Start advertising
+  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);  // Helps with iPhone connection
+  pAdvertising->setMinPreferred(0x12);
+  BLEDevice::startAdvertising();
+
+  Serial.println("[BLE] Advertising as '" BLE_DEVICE_NAME "'");
+  Serial.println("[BLE] Waiting for client...");
+
+  // Print header for serial debug
   Serial.print("DATA");
   for (int i = 0; i < numFlexSensors; i++) {
     Serial.print(",");
     Serial.print(fingerNames[i]);
-    Serial.print("(D");
-    Serial.print(flexPins[i]);
+    Serial.print("(MUX:");
+    Serial.print(fingerChannel[i]);
     Serial.print(")");
   }
-  // Right hand IMU headers (MPU1 = Right = 0x69)
   Serial.print(",aX1,aY1,aZ1,gX1,gY1,gZ1");
-  // Left hand IMU headers (MPU2 = Left = 0x68)
   Serial.print(",aX2,aY2,aZ2,gX2,gY2,gZ2");
   Serial.println();
 
@@ -196,18 +285,23 @@ void loop() {
   if (now - lastSampleTime < SAMPLE_INTERVAL_MS) return;
   lastSampleTime = now;
 
-  // ── Read Flex Sensors ──
+  // ── LED: solid when BLE connected, off when not ──
+  digitalWrite(LED_PIN, bleConnected ? HIGH : LOW);
+
+  // ── Binary payload for BLE: 22 floats = 88 bytes ──
+  float payload[22];
+
+  // ── Read Flex Sensors via Multiplexer ──
   Serial.print("DATA");
   for (int i = 0; i < numFlexSensors; i++) {
-    int rawValue = analogRead(flexPins[i]);
-
-    if (invertData) {
-      rawValue = 4095 - rawValue;
-    }
+    int rawValue = readMuxChannel(fingerChannel[i]);
 
     // Apply EMA smoothing
     smoothedValues[i] = (alpha * rawValue) + ((1.0 - alpha) * smoothedValues[i]);
 
+    payload[i] = smoothedValues[i];
+
+    // Serial debug output
     Serial.print(",");
     Serial.print(fingerNames[i]);
     Serial.print(":");
@@ -219,7 +313,19 @@ void loop() {
   if (mpuRightOk) {
     imu1 = readIMU(MPU_RIGHT);
   }
-  // Print right hand accel + gyro (nan if failed)
+
+  if (imu1.ok) {
+    payload[10] = imu1.ax;
+    payload[11] = imu1.ay;
+    payload[12] = imu1.az;
+    payload[13] = imu1.gx;
+    payload[14] = imu1.gy;
+    payload[15] = imu1.gz;
+  } else {
+    for (int i = 10; i < 16; i++) payload[i] = 0;
+  }
+
+  // Serial debug for right IMU
   Serial.print(",");
   if (imu1.ok) {
     Serial.print(imu1.ax, 3); Serial.print(",");
@@ -237,7 +343,19 @@ void loop() {
   if (mpuLeftOk) {
     imu2 = readIMU(MPU_LEFT);
   }
-  // Print left hand accel + gyro (nan if failed)
+
+  if (imu2.ok) {
+    payload[16] = imu2.ax;
+    payload[17] = imu2.ay;
+    payload[18] = imu2.az;
+    payload[19] = imu2.gx;
+    payload[20] = imu2.gy;
+    payload[21] = imu2.gz;
+  } else {
+    for (int i = 16; i < 22; i++) payload[i] = 0;
+  }
+
+  // Serial debug for left IMU
   Serial.print(",");
   if (imu2.ok) {
     Serial.print(imu2.ax, 3); Serial.print(",");
@@ -251,4 +369,19 @@ void loop() {
   }
 
   Serial.println();
+
+  // ── Send via BLE if connected ──
+  if (bleConnected) {
+    pCharacteristic->setValue((uint8_t*)payload, sizeof(payload));
+    pCharacteristic->notify();
+  }
+
+  // ── Handle BLE reconnection ──
+  // If client disconnects, restart advertising so a new client can connect
+  if (!bleConnected && oldConnected) {
+    delay(500);  // Give BLE stack time to settle
+    pServer->startAdvertising();
+    Serial.println("[BLE] Restarted advertising");
+  }
+  oldConnected = bleConnected;
 }

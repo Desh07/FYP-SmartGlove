@@ -376,7 +376,7 @@
 
     // ─── NORMALIZE ───
     function normFlex(label, raw) {
-      if (!S.cal || !S.cal.fingers[label]) return raw / 4095;
+      if (!S.cal || !S.cal.fingers || !S.cal.fingers[label]) return raw / 4095;
       const f = S.cal.fingers[label];
       const rest = f.restResistance ?? f.rest ?? 0;
       const bent = f.bentResistance ?? f.bent ?? 0;

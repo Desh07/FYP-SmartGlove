@@ -14,3 +14,8 @@ env/
 
 # Datasets
 # If CSVs are huge, maybe we ignore them, but since we just want to ignore md files as requested, I won't ignore csv so they don't break.
+
+# Generated and log files
+Frontend.zip
+func-output.log
+
