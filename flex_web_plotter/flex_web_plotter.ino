@@ -6,7 +6,7 @@
 //   Also outputs to Serial for debugging
 //
 // --- CD74HC4067 16-Channel Multiplexer ---
-// S0=GPIO16, S1=GPIO17, S2=GPIO5, S3=GPIO18, SIG=GPIO36 (ADC1!)
+// S0=GPIO25, S1=GPIO26, S2=GPIO27, S3=GPIO14, SIG=GPIO36 (ADC1!)
 // Channels 0-9 → 10 flex sensors (Right: 0-4, Left: 5-9)
 //
 // --- MPU6050 I2C Addresses ---
@@ -51,10 +51,10 @@ const uint8_t MPU_LEFT  = 0x68;  // Left hand  (AD0 → GND)
 
 // ─── CD74HC4067 Multiplexer Pins ───
 // IMPORTANT: SIG must be on ADC1 (GPIO 32-39) because ADC2 doesn't work with BLE/WiFi
-const int MUX_S0  = 16;   // Channel select bit 0
-const int MUX_S1  = 17;   // Channel select bit 1
-const int MUX_S2  = 5;    // Channel select bit 2
-const int MUX_S3  = 18;   // Channel select bit 3
+const int MUX_S0  = 25;   // Channel select bit 0
+const int MUX_S1  = 26;   // Channel select bit 1
+const int MUX_S2  = 27;   // Channel select bit 2
+const int MUX_S3  = 14;   // Channel select bit 3
 const int MUX_SIG = 36;   // Analog input (VP pin, ADC1_CH0)
 
 // ─── Flex Sensor → Mux Channel Mapping ───
