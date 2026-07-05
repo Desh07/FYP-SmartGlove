@@ -7,7 +7,7 @@
 //
 // --- CD74HC4067 16-Channel Multiplexer ---
 // S0=GPIO25, S1=GPIO26, S2=GPIO27, S3=GPIO14, SIG=GPIO36 (ADC1!)
-// Channels 0-9 → 10 flex sensors (Right: 0-4, Left: 5-9)
+// Channels 15-6 → 10 flex sensors (Right: 15-11, Left: 10-6)
 //
 // --- MPU6050 I2C Addresses ---
 // Right Hand MPU: AD0 → 3V3 → address 0x69
@@ -62,16 +62,16 @@ const int numFlexSensors = 10;
 
 // Which mux channel (0-15) maps to which finger
 const int fingerChannel[numFlexSensors] = {
-  0,   // Right Thumb
-  1,   // Right Index
-  2,   // Right Middle
-  3,   // Right Ring
-  4,   // Right Pinky
-  5,   // Left Thumb
-  6,   // Left Index
-  7,   // Left Middle
-  8,   // Left Ring
-  9    // Left Pinky
+  15,  // Right Thumb
+  14,  // Right Index
+  13,  // Right Middle
+  12,  // Right Ring
+  11,  // Right Pinky
+  10,  // Left Thumb
+  9,   // Left Index
+  8,   // Left Middle
+  7,   // Left Ring
+  6    // Left Pinky
 };
 
 const char* fingerNames[numFlexSensors] = {
