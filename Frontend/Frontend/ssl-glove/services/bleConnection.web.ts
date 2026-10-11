@@ -78,7 +78,7 @@ export class WebBleConnection implements IGloveConnection {
       useSerial = hasSerial;
       if (hasSerial && hasBluetooth && typeof window !== 'undefined') {
         useSerial = window.confirm(
-          'Connect to ESP32 HandGlow:\n\n• Click [OK] for USB Cable (Serial Port)\n• Click [Cancel] for Bluetooth (Wireless BLE)'
+          'Connect to ESP32 Smart Glove:\n\n• Click [OK] for USB Cable (Serial Port)\n• Click [Cancel] for Bluetooth (Wireless BLE)'
         );
       }
     }
@@ -124,7 +124,6 @@ export class WebBleConnection implements IGloveConnection {
         this.serialReader = textDecoder.readable.getReader();
         this.serialBuffer = '';
         this.setState('connected');
-
         this.startSerialReadLoop();
         return;
       }

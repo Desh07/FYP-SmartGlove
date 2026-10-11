@@ -1,14 +1,14 @@
 """
-HandGlow Sign Language Model Trainer
+Smart Glove Sign Language Model Trainer
 =====================================
 Trains a neural network on the recorded dataset and exports
 a JSON model that can be loaded directly in the browser.
 
 Usage:
-  python train_model.py --csv handglow_dataset.csv
-  python train_model.py --csv handglow_dataset.csv --hand right
-  python train_model.py --csv handglow_dataset.csv --hand left
-  python train_model.py --csv handglow_dataset.csv --hand both
+  python train_model.py --csv smartglove_dataset.csv
+  python train_model.py --csv smartglove_dataset.csv --hand right
+  python train_model.py --csv smartglove_dataset.csv --hand left
+  python train_model.py --csv smartglove_dataset.csv --hand both
 
 Options:
   --csv        Path to the exported CSV from sign_recorder.html
@@ -290,7 +290,7 @@ def export_for_browser(model, scaler, active_features, labels, accuracy, out_dir
         layers.append(layer_info)
 
     model_json = {
-        'format': 'handglow_mlp_v1',
+        'format': 'smartglove_mlp_v1',
         'created': datetime.now().isoformat(),
         'accuracy': round(accuracy, 4),
         'labels': labels,
@@ -315,7 +315,7 @@ def export_for_browser(model, scaler, active_features, labels, accuracy, out_dir
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='HandGlow Model Trainer')
+    parser = argparse.ArgumentParser(description='Smart Glove Model Trainer')
     parser.add_argument('--csv', required=True, help='Path to dataset CSV')
     parser.add_argument('--hand', default='both', choices=['right', 'left', 'both'],
                         help='Hand mode: right, left, or both (default: both)')

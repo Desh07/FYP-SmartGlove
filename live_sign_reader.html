@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HandGlow — Live Sign Reader</title>
-  <meta name="description" content="Real-time sign language recognition using HandGlow glove" />
+  <title>Smart Glove — Live Sign Reader</title>
+  <meta name="description" content="Real-time sign language recognition using Smart Glove" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -188,7 +188,7 @@
 <body>
   <div class="app">
     <div class="header">
-      <h1>🤟 HandGlow — Live Sign Reader</h1>
+      <h1>🤟 Smart Glove — Live Sign Reader</h1>
       <p>Real-time sign language recognition</p>
     </div>
 
@@ -353,8 +353,8 @@
       if (!f) return;
       try {
         const data = JSON.parse(await f.text());
-        if (data.format !== 'handglow_mlp_v1') {
-          alert('Unsupported model format. Expected handglow_mlp_v1'); return;
+        if (data.format !== 'smartglove_mlp_v1' && data.format !== 'handglow_mlp_v1') {
+          alert('Unsupported model format. Expected smartglove_mlp_v1'); return;
         }
         S.model = data;
         S.meta = {

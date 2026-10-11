@@ -28,8 +28,8 @@ export interface IGloveConnection {
 
 // ─── BLE GATT UUIDs (must match firmware) ───
 export const BLE_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
-export const BLE_CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb';
-export const BLE_DEVICE_NAME  = 'HandGlow';
+export const BLE_DEVICE_NAME  = 'Smart Glove';
+export const BLE_DEVICE_NAMES = ['Smart Glove', 'HandGlow'];
 
 // ─── Finger & IMU channel names ───
 export const FINGER_NAMES = ['RT', 'RI', 'RM', 'RR', 'RP', 'LT', 'LI', 'LM', 'LR', 'LP'] as const;

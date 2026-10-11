@@ -508,7 +508,7 @@ function GestureBrandLogo({
               letterSpacing: 1.5,
             }}
           >
-            HANDGLOW
+            SMART GLOVE
           </Text>
 
           {/* Gesture Management App Pill */}
@@ -1594,7 +1594,7 @@ function Header({ onMenu }: { onMenu: () => void }) {
         <GestureBrandLogo size="small" />
         <View>
           <Text style={{ fontSize: 16, fontWeight: '800', color: palette.ink, letterSpacing: 0.6 }}>
-            HANDGLOW
+            SMART GLOVE
           </Text>
           <Text style={{ fontSize: 10, fontWeight: '700', color: '#EE3E42', letterSpacing: 0.8, textTransform: 'uppercase' }}>
             Gesture Management

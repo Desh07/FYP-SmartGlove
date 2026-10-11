@@ -4,7 +4,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { CalibrationData } from './inference';
 
-const CALIBRATION_STORAGE_KEY = 'handglow:calibration';
+const CALIBRATION_STORAGE_KEY = 'smartglove:calibration';
+const LEGACY_STORAGE_KEY = 'handglow:calibration';
 
 export type CalibrationStep =
   | 'idle'
@@ -175,7 +176,8 @@ export async function saveCalibration(data: CalibrationData): Promise<void> {
 
 export async function loadCalibration(): Promise<CalibrationData | null> {
   try {
-    const raw = await AsyncStorage.getItem(CALIBRATION_STORAGE_KEY);
+    let raw = await AsyncStorage.getItem(CALIBRATION_STORAGE_KEY);
+    if (!raw) raw = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as CalibrationData;
   } catch {

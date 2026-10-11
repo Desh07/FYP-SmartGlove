@@ -1,5 +1,5 @@
 // ============================================================
-// HandGlow Firmware v3.0 — BLE + Multiplexer + Dual MPU6050
+// Smart Glove Firmware v3.0 — BLE + Multiplexer + Dual MPU6050
 // ============================================================
 // COMMUNICATION:
 //   BLE GATT Server — Service 0xFFE0, Characteristic 0xFFE1 (Notify)
@@ -24,7 +24,7 @@
 #include <BLE2902.h>
 
 // ─── BLE Config ───
-#define BLE_DEVICE_NAME    "HandGlow"
+#define BLE_DEVICE_NAME    "Smart Glove"
 #define SERVICE_UUID       "0000ffe0-0000-1000-8000-00805f9b34fb"
 #define CHAR_UUID          "0000ffe1-0000-1000-8000-00805f9b34fb"
 
@@ -193,7 +193,7 @@ IMUData readIMU(uint8_t addr) {
 void setup() {
   Serial.begin(115200);
   Serial.println();
-  Serial.println("HandGlow v3.0 — BLE + Mux + Dual MPU6050");
+  Serial.println("Smart Glove v3.0 — BLE + Mux + Dual MPU6050");
   Serial.println("==========================================");
 
   // ── LED ──

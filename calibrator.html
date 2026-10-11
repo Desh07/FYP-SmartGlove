@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HandGlow — Calibrator</title>
-  <meta name="description" content="Calibrate your HandGlow flex sensor glove for personalized sign language recognition" />
+  <title>Smart Glove — Calibrator</title>
+  <meta name="description" content="Calibrate your Smart Glove flex sensor glove for personalized sign language recognition" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -497,7 +497,7 @@
   <div class="app">
     <!-- Header -->
     <div class="header">
-      <h1>🤟 HandGlow Calibrator</h1>
+      <h1>🤟 Smart Glove Calibrator</h1>
       <p>Personalize your flex sensor ranges + IMU orientation in ~60 seconds</p>
     </div>
 
@@ -1293,7 +1293,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `handglow_calibration_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `smartglove_calibration_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });

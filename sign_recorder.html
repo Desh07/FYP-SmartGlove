@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HandGlow — Sign Recorder</title>
+  <title>Smart Glove — Sign Recorder</title>
   <meta name="description" content="Record sign language training data with guided batch workflow" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
@@ -116,7 +116,7 @@
 <body>
 <div class="app">
   <div class="header">
-    <h1>📝 HandGlow Sign Recorder</h1>
+    <h1>📝 Smart Glove Sign Recorder</h1>
     <p>Record training data — multiple batches per sign</p>
   </div>
 
@@ -537,7 +537,7 @@ function updateDatasetTable(){
 $('exportCsvBtn').addEventListener('click',()=>{
   const hdr='label,hand_mode,recorded_hand,R.Thumb,R.Index,R.Middle,R.Ring,R.Pinky,L.Thumb,L.Index,L.Middle,L.Ring,L.Pinky,aX1,aY1,aZ1,gX1,gY1,gZ1,aX2,aY2,aZ2,gX2,gY2,gZ2';
   const rows=S.dataset.map(s=>s.label+','+(s.type||'either_hand')+','+(s.hand||'right')+','+s.features.map(v=>v.toFixed(4)).join(','));
-  dl(hdr+'\n'+rows.join('\n'),`handglow_dataset_${Date.now()}.csv`,'text/csv');
+  dl(hdr+'\n'+rows.join('\n'),`smartglove_dataset_${Date.now()}.csv`,'text/csv');
 });
 $('exportJsonBtn').addEventListener('click',()=>{
   const json=JSON.stringify({exportDate:new Date().toISOString(),totalSamples:S.dataset.length,
@@ -545,7 +545,7 @@ $('exportJsonBtn').addEventListener('click',()=>{
     features:['R.Thumb','R.Index','R.Middle','R.Ring','R.Pinky','L.Thumb','L.Index','L.Middle','L.Ring','L.Pinky','aX1','aY1','aZ1','gX1','gY1','gZ1','aX2','aY2','aZ2','gX2','gY2','gZ2'],
     samples:S.dataset.map(s=>({label:s.label,hand_mode:s.type||'either_hand',recorded_hand:s.hand||'right',features:s.features}))
   },null,2);
-  dl(json,`handglow_dataset_${Date.now()}.json`,'application/json');
+  dl(json,`smartglove_dataset_${Date.now()}.json`,'application/json');
 });
 function dl(content,name,type){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));

@@ -1,6 +1,6 @@
 // ─── Pure JS Neural Network Inference Engine ───
 // Ported from live_sign_reader.html — no TensorFlow.js dependency
-// Loads the handglow_mlp_v1 model format
+// Loads the smartglove_mlp_v1 model format
 
 export type ModelData = {
   format: string;
@@ -106,7 +106,7 @@ export class InferenceEngine {
   private probEMA: number[] | null = null;
 
   loadModel(modelJson: ModelData): void {
-    if (modelJson.format !== 'handglow_mlp_v1') {
+    if (modelJson.format !== 'smartglove_mlp_v1' && modelJson.format !== 'handglow_mlp_v1') {
       throw new Error(`Unsupported model format: ${modelJson.format}`);
     }
     this.model = modelJson;
