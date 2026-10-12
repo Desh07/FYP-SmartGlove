@@ -1,12 +1,12 @@
 // ─── React Hook for Glove BLE Data ───
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import type { SensorData, ConnectionState, GloveDevice, IGloveConnection } from '../services/bleTypes';
+import type { SensorData, ConnectionState, GloveDevice, IGloveConnection, ConnectionType } from '../services/bleTypes';
 
 // Factory: pick the right BLE implementation based on platform
 function createConnection(): IGloveConnection {
   if (Platform.OS === 'web') {
-    // Web Bluetooth (Chrome)
+    // Web Bluetooth / Web Serial
     const { WebBleConnection } = require('../services/bleConnection.web');
     return new WebBleConnection();
   } else {
@@ -19,6 +19,7 @@ function createConnection(): IGloveConnection {
 export function useGloveData() {
   const connectionRef = useRef<IGloveConnection | null>(null);
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const [connectionType, setConnectionType] = useState<ConnectionType | null>(null);
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [devices, setDevices] = useState<GloveDevice[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,9 @@ export function useGloveData() {
         setSensorData(null);
         setSps(0);
         spsCounterRef.current = 0;
+        setConnectionType(null);
+      } else if (state === 'connected' && conn.getConnectionType) {
+        setConnectionType(conn.getConnectionType());
       }
     });
 
@@ -71,45 +75,38 @@ export function useGloveData() {
     };
   }, [handleData]);
 
-  const scan = useCallback(async () => {
+  const scan = useCallback(async (mode?: ConnectionType) => {
     const conn = connectionRef.current;
-    if (!conn) {
-      console.log('[useGloveData] scan() failed: connectionRef is null');
-      return;
-    }
+    if (!conn) return;
 
-    console.log('[useGloveData] scan() invoked');
     setError(null);
     try {
-      const found = await conn.scan();
-      console.log('[useGloveData] scan() found devices:', found);
+      const found = await conn.scan(mode);
       setDevices(found);
 
-      // On Web Bluetooth, scan() returns the selected device and we auto-connect
+      // On Web, scan() returns the selected device and we auto-connect
       if (Platform.OS === 'web' && found.length > 0) {
-        console.log('[useGloveData] auto-connecting to web device ID:', found[0].id);
         await conn.connect(found[0].id);
+        if (conn.getConnectionType) {
+          setConnectionType(conn.getConnectionType());
+        }
       }
     } catch (err: any) {
-      console.error('[useGloveData] scan() error details:', err);
-      setError(err.message || 'Scan failed');
+      setError(err.message || 'Connection failed');
     }
   }, []);
 
   const connect = useCallback(async (deviceId: string) => {
     const conn = connectionRef.current;
-    if (!conn) {
-      console.log('[useGloveData] connect() failed: connectionRef is null');
-      return;
-    }
+    if (!conn) return;
 
-    console.log('[useGloveData] connect() invoked for ID:', deviceId);
     setError(null);
     try {
       await conn.connect(deviceId);
-      console.log('[useGloveData] connect() success');
+      if (conn.getConnectionType) {
+        setConnectionType(conn.getConnectionType());
+      }
     } catch (err: any) {
-      console.error('[useGloveData] connect() error details:', err);
       setError(err.message || 'Connection failed');
     }
   }, []);
@@ -121,6 +118,7 @@ export function useGloveData() {
     setError(null);
     try {
       await conn.disconnect();
+      setConnectionType(null);
     } catch (err: any) {
       setError(err.message || 'Disconnect failed');
     }
@@ -128,6 +126,7 @@ export function useGloveData() {
 
   return {
     connectionState,
+    connectionType,
     sensorData,
     devices,
     sps,

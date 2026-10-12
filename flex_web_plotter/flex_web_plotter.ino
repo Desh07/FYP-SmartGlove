@@ -233,6 +233,7 @@ void setup() {
   // ── Initialize BLE ──
   Serial.println("[BLE] Initializing...");
   BLEDevice::init(BLE_DEVICE_NAME);
+  BLEDevice::setMTU(128);  // Ensure MTU fits 88-byte payload
 
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new ServerCallbacks());
@@ -254,11 +255,12 @@ void setup() {
   BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);  // Helps with iPhone connection
-  pAdvertising->setMinPreferred(0x12);
+  pAdvertising->setMinPreferred(0x06);  // Helps with iOS/Web connection
+  pAdvertising->setMaxPreferred(0x12);
   BLEDevice::startAdvertising();
 
   Serial.println("[BLE] Advertising as '" BLE_DEVICE_NAME "'");
+  Serial.println("[BLE] Dual-mode active: Streaming via USB Serial (115200) + BLE");
   Serial.println("[BLE] Waiting for client...");
 
   // Print header for serial debug
@@ -281,12 +283,32 @@ void setup() {
 // LOOP — runs at 25 Hz (40ms intervals)
 // ============================================================
 void loop() {
+  // ── Process incoming serial commands ──
+  while (Serial.available() > 0) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+    if (cmd == "PING") {
+      Serial.println("PONG");
+    } else if (cmd == "STATUS") {
+      Serial.print("STATUS,BLE:");
+      Serial.print(bleConnected ? "1" : "0");
+      Serial.print(",MPU_R:");
+      Serial.print(mpuRightOk ? "1" : "0");
+      Serial.print(",MPU_L:");
+      Serial.println(mpuLeftOk ? "1" : "0");
+    }
+  }
+
   unsigned long now = millis();
   if (now - lastSampleTime < SAMPLE_INTERVAL_MS) return;
   lastSampleTime = now;
 
-  // ── LED: solid when BLE connected, off when not ──
-  digitalWrite(LED_PIN, bleConnected ? HIGH : LOW);
+  // ── LED: solid when BLE connected, heartbeat when on USB Serial only ──
+  if (bleConnected) {
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, (now % 1000 < 100) ? HIGH : LOW);
+  }
 
   // ── Binary payload for BLE: 22 floats = 88 bytes ──
   float payload[22];

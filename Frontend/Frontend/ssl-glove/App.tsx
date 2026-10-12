@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Easing,
   Image,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -39,6 +40,7 @@ import {
   saveSettings,
 } from './data/localDb';
 import { useGloveData } from './hooks/useGloveData';
+import type { SensorData, ConnectionType } from './services/bleTypes';
 import { InferenceEngine, type CalibrationData } from './services/inference';
 import { SentenceBuilder, translateSign } from './services/sentenceBuilder';
 import { loadCalibration, saveCalibration } from './services/calibration';
@@ -419,6 +421,150 @@ type ThemePalette = typeof lightPalette;
 
 const googleIcon = require('./assets/google.png');
 const bluetoothIcon = require('./assets/bluetooth.png');
+function GestureBrandLogo({
+  size = 'large',
+  showTagline = true,
+}: {
+  size?: 'small' | 'large';
+  showTagline?: boolean;
+}) {
+  const { palette, isDark } = useTheme();
+  const isSmall = size === 'small';
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {/* Icon Badge */}
+      <View
+        style={{
+          width: isSmall ? 38 : 68,
+          height: isSmall ? 38 : 68,
+          borderRadius: isSmall ? 10 : 20,
+          backgroundColor: isDark ? '#231F1C' : '#111827',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1.5,
+          borderColor: isDark ? 'rgba(238, 62, 66, 0.4)' : 'rgba(238, 62, 66, 0.3)',
+          ...Platform.select({
+            web: {
+              boxShadow: '0 10px 25px -5px rgba(238, 62, 66, 0.3), 0 4px 10px -3px rgba(0, 0, 0, 0.2)',
+            },
+            default: {
+              shadowColor: '#EE3E42',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 10,
+              elevation: 6,
+            },
+          }),
+        }}
+      >
+        {/* Glove Fingers & Sensor Nodes */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            gap: isSmall ? 2 : 4,
+            height: isSmall ? 20 : 32,
+            paddingBottom: isSmall ? 2 : 4,
+          }}
+        >
+          {/* Thumb: Sensor LED + Finger Segment */}
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: isSmall ? 2.5 : 3.5, height: isSmall ? 2.5 : 3.5, borderRadius: 2, backgroundColor: '#EE3E42', marginBottom: 2 }} />
+            <View style={{ width: isSmall ? 3 : 4.5, height: isSmall ? 9 : 14, borderRadius: 2.5, backgroundColor: '#94A3B8' }} />
+          </View>
+          {/* Index: Sensor LED + Finger Segment */}
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: isSmall ? 2.5 : 3.5, height: isSmall ? 2.5 : 3.5, borderRadius: 2, backgroundColor: '#EE3E42', marginBottom: 2 }} />
+            <View style={{ width: isSmall ? 3 : 4.5, height: isSmall ? 13 : 21, borderRadius: 2.5, backgroundColor: '#CBD5E1' }} />
+          </View>
+          {/* Middle: Sensor LED + Finger Segment */}
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: isSmall ? 2.5 : 3.5, height: isSmall ? 2.5 : 3.5, borderRadius: 2, backgroundColor: '#EE3E42', marginBottom: 2 }} />
+            <View style={{ width: isSmall ? 3 : 4.5, height: isSmall ? 16 : 25, borderRadius: 2.5, backgroundColor: '#FFFFFF' }} />
+          </View>
+          {/* Ring: Sensor LED + Finger Segment */}
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: isSmall ? 2.5 : 3.5, height: isSmall ? 2.5 : 3.5, borderRadius: 2, backgroundColor: '#EE3E42', marginBottom: 2 }} />
+            <View style={{ width: isSmall ? 3 : 4.5, height: isSmall ? 14 : 22, borderRadius: 2.5, backgroundColor: '#CBD5E1' }} />
+          </View>
+          {/* Pinky: Sensor LED + Finger Segment */}
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: isSmall ? 2.5 : 3.5, height: isSmall ? 2.5 : 3.5, borderRadius: 2, backgroundColor: '#EE3E42', marginBottom: 2 }} />
+            <View style={{ width: isSmall ? 3 : 4.5, height: isSmall ? 10 : 15, borderRadius: 2.5, backgroundColor: '#94A3B8' }} />
+          </View>
+        </View>
+      </View>
+
+      {/* Brand Title & Tag for Large Display */}
+      {!isSmall ? (
+        <View style={{ alignItems: 'center', marginTop: 16 }}>
+          <Text
+            style={{
+              fontSize: 26,
+              fontWeight: '800',
+              color: palette.ink,
+              letterSpacing: 1.5,
+            }}
+          >
+            HANDGLOW
+          </Text>
+
+          {/* Gesture Management App Pill */}
+          <View
+            style={{
+              marginTop: 6,
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: isDark ? 'rgba(238,62,66,0.18)' : '#FEE2E2',
+              borderColor: isDark ? 'rgba(238,62,66,0.35)' : '#FECACA',
+              borderWidth: 1,
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 4,
+              gap: 6,
+            }}
+          >
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: '#EE3E42',
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: '700',
+                color: isDark ? '#FCA5A5' : '#DC2626',
+                letterSpacing: 1.2,
+                textTransform: 'uppercase',
+              }}
+            >
+              Gesture Management App
+            </Text>
+          </View>
+
+          {showTagline && (
+            <Text
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                color: palette.muted,
+                textAlign: 'center',
+                lineHeight: 18,
+              }}
+            >
+              Smart glove telemetry & gesture translation platform
+            </Text>
+          )}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 const HAS_LAUNCHED_KEY = 'ssl_glove_has_launched';
 
 // Validation utilities
@@ -474,6 +620,28 @@ export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [liveReaderOpen, setLiveReaderOpen] = useState(false);
   const [calibratorOpen, setCalibratorOpen] = useState(false);
+  const [voiceOutputOn, setVoiceOutputOn] = useState(true);
+  const [hapticAlertsOn, setHapticAlertsOn] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('user@example.com');
+  const [profilePhone, setProfilePhone] = useState('+94 77 123 4567');
+  const [profileDevice, setProfileDevice] = useState('SSL Glove 01');
+  const [savedPhrases, setSavedPhrases] = useState<Record<OutputLanguage, string[]>>(
+    defaultSavedPhrases
+  );
+  const [profileSaved, setProfileSaved] = useState({
+    name: '',
+    email: 'user@example.com',
+    phone: '+94 77 123 4567',
+    device: 'SSL Glove 01',
+  });
+  const [profileInitInProgress, setProfileInitInProgress] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [errorToast, setErrorToast] = useState<{ title: string; message: string } | null>(
+    null
+  );
 
   // ─── BLE + Inference Integration ───
   const glove = useGloveData();
@@ -486,14 +654,18 @@ export default function App() {
   const [holdProgress, setHoldProgress] = useState(0);
   const [topPredictions, setTopPredictions] = useState<{label: string; probability: number}[]>([]);
 
+  useEffect(() => {
+    if (glove.error) {
+      showError('Glove Connection', glove.error);
+    }
+  }, [glove.error]);
+
   // Load model on mount
   useEffect(() => {
     try {
       inferenceRef.current.loadModel(bundledModel);
       setModelLoaded(true);
-    } catch (err) {
-      console.error('Failed to load model:', err);
-    }
+    } catch (_) {}
   }, []);
 
   // Load calibration from storage
@@ -503,7 +675,18 @@ export default function App() {
     });
   }, []);
 
-  // Run inference when sensor data arrives
+  // Reset live predictions when disconnected
+  useEffect(() => {
+    if (!glove.isConnected) {
+      setLastGesture('');
+      setConfidence(0);
+      setTopPredictions([]);
+      setHoldProgress(0);
+      inferenceRef.current.reset();
+    }
+  }, [glove.isConnected]);
+
+  // Run live neural network inference whenever incoming sensor data arrives from ESP32
   useEffect(() => {
     if (!glove.sensorData || !modelLoaded) return;
 
@@ -515,58 +698,52 @@ export default function App() {
     );
 
     if (result) {
-      // Determine language code for translation
-      const langCode = outputLanguage === 'Tamil' ? 'ta' : 'si';
+      const langCode = appLanguage === 'English' ? 'en' : (outputLanguage === 'Tamil' ? 'ta' : 'si');
       setLastGesture(translateSign(result.sign, langCode));
       setConfidence(result.confidence);
       setTopPredictions(result.top5);
 
-      // Update sentence builder
       const added = sentenceRef.current.update(result.sign, result.confidence, result.isStill);
       const state = sentenceRef.current.getState();
       setSentenceWords(state.words);
       setHoldProgress(state.holdProgress);
 
-      if (added) {
-        // Speak the word if voice output is on
-        const langSpeech = outputLanguage === 'Tamil' ? 'ta-IN' : 'si-LK';
+      if (added && voiceOutputOn) {
+        const langSpeech = appLanguage === 'English' ? 'en-US' : (outputLanguage === 'Tamil' ? 'ta-IN' : 'si-LK');
         const translated = translateSign(result.sign, langCode);
-        Speech.speak(translated, { language: langSpeech, rate: 0.9 });
+        try {
+          Speech.speak(translated, { language: langSpeech, rate: 0.9 });
+        } catch (_) {}
       }
     }
-  }, [glove.sensorData, modelLoaded, calibrationData, outputLanguage]);
+  }, [glove.sensorData, modelLoaded, calibrationData, outputLanguage, appLanguage, voiceOutputOn]);
 
-  // Wrap BLE connection state as isConnected for the rest of the app
+  // Real live connection state from glove (ESP32 via USB Serial or Bluetooth BLE)
   const isConnected = glove.isConnected;
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-  const [errorToast, setErrorToast] = useState<{ title: string; message: string } | null>(
-    null
-  );
+  const connectionState = glove.connectionState;
+  const connectionType = glove.connectionType;
+  const sps = glove.sps;
 
-  // Show BLE scan or connection error if it happens
-  useEffect(() => {
-    if (glove.error) {
-      showError('Glove Connection', glove.error);
+  const handleConnectSerial = () => {
+    glove.scan('serial');
+  };
+
+  const handleConnectBluetooth = () => {
+    glove.scan('bluetooth');
+  };
+
+  const handleDisconnect = () => {
+    glove.disconnect();
+  };
+
+  const handleToggleConnection = () => {
+    if (glove.isConnected) {
+      glove.disconnect();
+    } else {
+      glove.scan();
     }
-  }, [glove.error]);
-  const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('user@example.com');
-  const [profilePhone, setProfilePhone] = useState('+94 77 123 4567');
-  const [profileDevice, setProfileDevice] = useState('SSL Glove 01');
-  const [voiceOutputOn, setVoiceOutputOn] = useState(true);
-  const [hapticAlertsOn, setHapticAlertsOn] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [savedPhrases, setSavedPhrases] = useState<Record<OutputLanguage, string[]>>(
-    defaultSavedPhrases
-  );
-  const [profileSaved, setProfileSaved] = useState({
-    name: '',
-    email: 'user@example.com',
-    phone: '+94 77 123 4567',
-    device: 'SSL Glove 01',
-  });
-  const [profileInitInProgress, setProfileInitInProgress] = useState(false);
+  };
+
   const menuAnim = useRef(new Animated.Value(0)).current;
   const resolvedProfileName = useMemo(() => {
     const currentName = profileName?.trim();
@@ -580,12 +757,14 @@ export default function App() {
 
   const statusText = useMemo(
     () => {
-      if (glove.connectionState === 'scanning') return 'Scanning...';
-      if (glove.connectionState === 'connecting') return 'Connecting...';
-      if (isConnected) return getText(appLanguage, 'connected');
+      if (connectionState === 'scanning') return 'Scanning...';
+      if (connectionState === 'connecting') return 'Connecting...';
+      if (isConnected) {
+        return connectionType === 'serial' ? 'Connected (USB)' : 'Connected (BLE)';
+      }
       return getText(appLanguage, 'disconnected');
     },
-    [isConnected, appLanguage, glove.connectionState]
+    [isConnected, connectionType, appLanguage, connectionState]
   );
 
   const themePalette = useMemo(
@@ -1087,29 +1266,31 @@ export default function App() {
             appLanguage={appLanguage}
             outputLanguage={outputLanguage}
             isConnected={isConnected}
-            onToggleConnection={() => {
-              if (isConnected) {
-                glove.disconnect();
-              } else {
-                glove.scan();
-              }
-            }}
-            connectionState={glove.connectionState}
+            connectionType={connectionType}
+            onConnectSerial={handleConnectSerial}
+            onConnectBluetooth={handleConnectBluetooth}
+            onDisconnect={handleDisconnect}
+            onToggleConnection={handleToggleConnection}
+            connectionState={connectionState}
             lastGesture={lastGesture}
             confidence={confidence}
             sentenceWords={sentenceWords}
             holdProgress={holdProgress}
             topPredictions={topPredictions}
-            sps={glove.sps}
+            sps={sps}
             modelLoaded={modelLoaded}
+            sensorData={glove.sensorData}
             onSpeak={() => {
-              const langCode = outputLanguage === 'Tamil' ? 'ta' : 'si';
+              const langCode = appLanguage === 'English' ? 'en' : (outputLanguage === 'Tamil' ? 'ta' : 'si');
               const text = sentenceRef.current.getSentenceText(langCode);
               if (text) {
-                Speech.speak(text, {
-                  language: outputLanguage === 'Tamil' ? 'ta-IN' : 'si-LK',
-                  rate: 0.9,
-                });
+                const speechLang = appLanguage === 'English' ? 'en-US' : (outputLanguage === 'Tamil' ? 'ta-IN' : 'si-LK');
+                try {
+                  Speech.speak(text, {
+                    language: speechLang,
+                    rate: 0.9,
+                  });
+                } catch (_) {}
               }
             }}
             onClearSentence={() => {
@@ -1208,13 +1389,10 @@ export default function App() {
               <HomeScreen
                 statusText={statusText}
                 isConnected={isConnected}
-                onToggleConnection={() => {
-                  if (isConnected) {
-                    glove.disconnect();
-                  } else {
-                    glove.scan();
-                  }
-                }}
+                connectionType={connectionType}
+                onConnectSerial={handleConnectSerial}
+                onConnectBluetooth={handleConnectBluetooth}
+                onToggleConnection={handleToggleConnection}
                 lastGesture={lastGesture || getText(appLanguage, 'detecting')}
                 onGestureSample={() =>
                   setLastGesture(getGestureSample(outputLanguage))
@@ -1343,14 +1521,12 @@ function SplashScreen() {
       >
         <Animated.View
           style={[
-            styles.splashLogo,
             { transform: [{ scale: pulseScale }], opacity: pulseOpacity },
           ]}
         >
-          <Text style={styles.splashLogoText}>SSL</Text>
+          <GestureBrandLogo size="large" showTagline={false} />
         </Animated.View>
-        <Text style={styles.splashTitle}>GLOVE</Text>
-        <Text style={styles.splashSubtitle}>Smart glove companion</Text>
+        <Text style={styles.splashSubtitle}>Gesture Recognition & Telemetry</Text>
         <View style={styles.splashLoaderRow}>
           <LoadingDots />
         </View>
@@ -1377,7 +1553,7 @@ function FirstTimeScreen({
       </View>
       <View style={styles.firstTimeCard}>
         <Text style={styles.firstTimeEyebrow}>WELCOME</Text>
-        <Text style={styles.firstTimeTitle}>Meet SSL Glove</Text>
+        <GestureBrandLogo size="large" showTagline={false} />
         <Text style={styles.firstTimeSubtitle}>
           Translate gestures into natural speech and build your personal phrase bank.
         </Text>
@@ -1411,11 +1587,19 @@ function getGestureSample(language: OutputLanguage) {
 
 function Header({ onMenu }: { onMenu: () => void }) {
   const styles = useThemedStyles();
+  const { palette } = useTheme();
   return (
     <View style={styles.header}>
-      <View>
-        <Text style={styles.brandTop}>SSL</Text>
-        <Text style={styles.brandBottom}>GLOVE</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <GestureBrandLogo size="small" />
+        <View>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: palette.ink, letterSpacing: 0.6 }}>
+            HANDGLOW
+          </Text>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: '#EE3E42', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+            Gesture Management
+          </Text>
+        </View>
       </View>
       <Pressable onPress={onMenu} style={styles.menuButton}>
         <View style={styles.menuLines}>
@@ -1447,82 +1631,105 @@ function LoginScreen({
   const { palette, isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   return (
     <SafeAreaView style={styles.authContainer}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ErrorToast toast={errorToast} onHide={onHideError} />
-      <ScrollView contentContainerStyle={styles.authContent}>
-        <View style={styles.authBrandRow}>
-          <Text style={styles.authBrand}>SSL</Text>
-          <Text style={[styles.authBrand, styles.authBrandAccent]}>GLOVE</Text>
+      <ScrollView
+        contentContainerStyle={styles.authContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.authCard}>
+          <GestureBrandLogo size="large" />
+
+          <View style={styles.authForm}>
+            <Text style={styles.inputLabel}>{getText(appLanguage, 'email')}</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+              placeholder={getText(appLanguage, 'emailPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, emailFocused && styles.inputFocused]}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+
+            <View style={styles.passwordLabelRow}>
+              <Text style={[styles.inputLabel, { marginTop: 0, marginBottom: 0 }]}>
+                {getText(appLanguage, 'password')}
+              </Text>
+              <Pressable
+                disabled={isLoading}
+                onPress={() =>
+                  Alert.alert(
+                    getText(appLanguage, 'resetTitle'),
+                    getText(appLanguage, 'resetMessage')
+                  )
+                }
+                style={Platform.select({ web: { cursor: 'pointer' } as any })}
+              >
+                <Text style={styles.forgotText}>
+                  {getText(appLanguage, 'forgotPassword')}
+                </Text>
+              </Pressable>
+            </View>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              placeholder={getText(appLanguage, 'passwordPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, passwordFocused && styles.inputFocused]}
+              secureTextEntry
+              editable={!isLoading}
+            />
+
+            <PrimaryButton
+              label={getText(appLanguage, 'login')}
+              onPress={() => onLogin(email, password)}
+              isLoading={isLoading}
+              disabled={isLoading}
+            />
+
+            <View style={styles.authDivider}>
+              <View style={styles.authDividerLine} />
+              <Text style={styles.authDividerText}>or continue with</Text>
+              <View style={styles.authDividerLine} />
+            </View>
+
+            <OutlineButton
+              label={getText(appLanguage, 'continueWithGoogle')}
+              onPress={() =>
+                Alert.alert(
+                  getText(appLanguage, 'googleTitle'),
+                  getText(appLanguage, 'googleMessage')
+                )
+              }
+              icon={googleIcon}
+              disabled={isLoading}
+            />
+
+            <Pressable
+              onPress={isLoading ? undefined : onGoRegister}
+              disabled={isLoading}
+              style={Platform.select({ web: { cursor: 'pointer' } as any })}
+            >
+              <Text style={styles.authFooter}>
+                {getText(appLanguage, 'dontHaveAccount')}{' '}
+                <Text style={styles.linkText}>
+                  {getText(appLanguage, 'signup')}
+                </Text>
+              </Text>
+            </Pressable>
+          </View>
         </View>
-        <Text style={styles.authSubtitle}>
-          {getText(appLanguage, 'loginToContinue')}
-        </Text>
-
-        <Text style={styles.inputLabel}>{getText(appLanguage, 'email')}</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder={getText(appLanguage, 'emailPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          keyboardType="email-address"
-          editable={!isLoading}
-        />
-
-        <Text style={styles.inputLabel}>{getText(appLanguage, 'password')}</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder={getText(appLanguage, 'passwordPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          secureTextEntry
-          editable={!isLoading}
-        />
-
-        <Pressable
-          disabled={isLoading}
-          onPress={() =>
-            Alert.alert(
-              getText(appLanguage, 'resetTitle'),
-              getText(appLanguage, 'resetMessage')
-            )
-          }
-        >
-          <Text style={styles.forgotText}>
-            {getText(appLanguage, 'forgotPassword')}
-          </Text>
-        </Pressable>
-
-        <PrimaryButton
-          label={getText(appLanguage, 'login')}
-          onPress={() => onLogin(email, password)}
-          isLoading={isLoading}
-          disabled={isLoading}
-        />
-        <OutlineButton
-          label={getText(appLanguage, 'continueWithGoogle')}
-          onPress={() =>
-            Alert.alert(
-              getText(appLanguage, 'googleTitle'),
-              getText(appLanguage, 'googleMessage')
-            )
-          }
-          icon={googleIcon}
-          disabled={isLoading}
-        />
-
-        <Pressable onPress={isLoading ? undefined : onGoRegister} disabled={isLoading}>
-          <Text style={styles.authFooter}>
-            {getText(appLanguage, 'dontHaveAccount')}{' '}
-            <Text style={styles.linkText}>
-              {getText(appLanguage, 'signup')}
-            </Text>
-          </Text>
-        </Pressable>
       </ScrollView>
       <LoadingOverlay visible={isLoading} />
     </SafeAreaView>
@@ -1551,111 +1758,132 @@ function RegisterScreen({
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [nameFocused, setNameFocused] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [confirmFocused, setConfirmFocused] = useState(false);
 
   return (
     <SafeAreaView style={styles.authContainer}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ErrorToast toast={errorToast} onHide={onHideError} />
-      <ScrollView contentContainerStyle={styles.authContent}>
-        <View style={styles.authBrandRow}>
-          <Text style={styles.authBrand}>SSL</Text>
-          <Text style={[styles.authBrand, styles.authBrandAccent]}>GLOVE</Text>
-        </View>
-        <Text style={styles.authSubtitle}>
-          {getText(appLanguage, 'welcomeCommunity')}
-        </Text>
+      <ScrollView
+        contentContainerStyle={styles.authContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.authCard}>
+          <GestureBrandLogo size="large" />
 
-        <Text style={styles.inputLabel}>{getText(appLanguage, 'name')}</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder={getText(appLanguage, 'namePlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          editable={!isLoading}
-        />
+          <View style={styles.authForm}>
+            <Text style={styles.inputLabel}>{getText(appLanguage, 'name')}</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              onFocus={() => setNameFocused(true)}
+              onBlur={() => setNameFocused(false)}
+              placeholder={getText(appLanguage, 'namePlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, nameFocused && styles.inputFocused]}
+              editable={!isLoading}
+            />
 
-        <Text style={styles.inputLabel}>{getText(appLanguage, 'email')}</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder={getText(appLanguage, 'emailPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          keyboardType="email-address"
-          editable={!isLoading}
-        />
+            <Text style={styles.inputLabel}>{getText(appLanguage, 'email')}</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+              placeholder={getText(appLanguage, 'emailPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, emailFocused && styles.inputFocused]}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
 
-        <Text style={styles.inputLabel}>
-          {getText(appLanguage, 'contactNumber')}
-        </Text>
-        <TextInput
-          value={phone}
-          onChangeText={setPhone}
-          placeholder={getText(appLanguage, 'contactPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          keyboardType="phone-pad"
-          editable={!isLoading}
-        />
-
-        <Text style={styles.inputLabel}>{getText(appLanguage, 'password')}</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder={getText(appLanguage, 'passwordPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          secureTextEntry
-          editable={!isLoading}
-        />
-
-        <Text style={styles.inputLabel}>
-          {getText(appLanguage, 'confirmPassword')}
-        </Text>
-        <TextInput
-          value={confirm}
-          onChangeText={setConfirm}
-          placeholder={getText(appLanguage, 'confirmPlaceholder')}
-          placeholderTextColor={palette.muted}
-          style={styles.input}
-          secureTextEntry
-          editable={!isLoading}
-        />
-
-        <View style={styles.rememberRow}>
-          <View style={styles.checkbox} />
-          <Text style={styles.rememberText}>
-            {getText(appLanguage, 'rememberMe')}
-          </Text>
-        </View>
-
-        <PrimaryButton
-          label={getText(appLanguage, 'register')}
-          onPress={() => onRegister(name, email, phone, password, confirm)}
-          isLoading={isLoading}
-          disabled={isLoading}
-        />
-        <OutlineButton
-          label={getText(appLanguage, 'signInWithGoogle')}
-          onPress={() =>
-            Alert.alert(
-              getText(appLanguage, 'googleTitle'),
-              getText(appLanguage, 'googleMessage')
-            )
-          }
-          icon={googleIcon}
-          disabled={isLoading}
-        />
-
-        <Pressable onPress={isLoading ? undefined : onGoLogin} disabled={isLoading}>
-          <Text style={styles.authFooter}>
-            {getText(appLanguage, 'alreadyHaveAccount')}{' '}
-            <Text style={styles.linkText}>
-              {getText(appLanguage, 'loginLink')}
+            <Text style={styles.inputLabel}>
+              {getText(appLanguage, 'contactNumber')}
             </Text>
-          </Text>
-        </Pressable>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              onFocus={() => setPhoneFocused(true)}
+              onBlur={() => setPhoneFocused(false)}
+              placeholder={getText(appLanguage, 'contactPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, phoneFocused && styles.inputFocused]}
+              keyboardType="phone-pad"
+              editable={!isLoading}
+            />
+
+            <Text style={styles.inputLabel}>{getText(appLanguage, 'password')}</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              placeholder={getText(appLanguage, 'passwordPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, passwordFocused && styles.inputFocused]}
+              secureTextEntry
+              editable={!isLoading}
+            />
+
+            <Text style={styles.inputLabel}>
+              {getText(appLanguage, 'confirmPassword')}
+            </Text>
+            <TextInput
+              value={confirm}
+              onChangeText={setConfirm}
+              onFocus={() => setConfirmFocused(true)}
+              onBlur={() => setConfirmFocused(false)}
+              placeholder={getText(appLanguage, 'confirmPlaceholder')}
+              placeholderTextColor={palette.muted}
+              style={[styles.input, confirmFocused && styles.inputFocused]}
+              secureTextEntry
+              editable={!isLoading}
+            />
+
+            <PrimaryButton
+              label={getText(appLanguage, 'register')}
+              onPress={() => onRegister(name, email, phone, password, confirm)}
+              isLoading={isLoading}
+              disabled={isLoading}
+            />
+
+            <View style={styles.authDivider}>
+              <View style={styles.authDividerLine} />
+              <Text style={styles.authDividerText}>or continue with</Text>
+              <View style={styles.authDividerLine} />
+            </View>
+
+            <OutlineButton
+              label={getText(appLanguage, 'signInWithGoogle')}
+              onPress={() =>
+                Alert.alert(
+                  getText(appLanguage, 'googleTitle'),
+                  getText(appLanguage, 'googleMessage')
+                )
+              }
+              icon={googleIcon}
+              disabled={isLoading}
+            />
+
+            <Pressable
+              onPress={isLoading ? undefined : onGoLogin}
+              disabled={isLoading}
+              style={Platform.select({ web: { cursor: 'pointer' } as any })}
+            >
+              <Text style={styles.authFooter}>
+                {getText(appLanguage, 'alreadyHaveAccount')}{' '}
+                <Text style={styles.linkText}>
+                  {getText(appLanguage, 'loginLink')}
+                </Text>
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
       <LoadingOverlay visible={isLoading} />
     </SafeAreaView>
@@ -1791,6 +2019,10 @@ function LiveSignReaderScreen({
   appLanguage,
   outputLanguage,
   isConnected,
+  connectionType,
+  onConnectSerial,
+  onConnectBluetooth,
+  onDisconnect,
   onToggleConnection,
   connectionState,
   lastGesture,
@@ -1800,6 +2032,7 @@ function LiveSignReaderScreen({
   topPredictions,
   sps,
   modelLoaded,
+  sensorData,
   onSpeak,
   onClearSentence,
   onUndoWord,
@@ -1808,6 +2041,10 @@ function LiveSignReaderScreen({
   appLanguage: AppLanguage;
   outputLanguage: OutputLanguage;
   isConnected: boolean;
+  connectionType?: ConnectionType | null;
+  onConnectSerial?: () => void;
+  onConnectBluetooth?: () => void;
+  onDisconnect?: () => void;
   onToggleConnection: () => void;
   connectionState: string;
   lastGesture: string;
@@ -1817,6 +2054,7 @@ function LiveSignReaderScreen({
   topPredictions: { label: string; probability: number }[];
   sps: number;
   modelLoaded: boolean;
+  sensorData?: SensorData | null;
   onSpeak: () => void;
   onClearSentence: () => void;
   onUndoWord: () => void;
@@ -1843,19 +2081,19 @@ function LiveSignReaderScreen({
       {/* Connection bar */}
       <View style={[styles.deviceCard, { marginBottom: 10 }]}>
         <View style={styles.deviceLeft}>
-          <View style={styles.bluetoothBadge}>
-            <Image source={bluetoothIcon} style={styles.bluetoothIcon} />
+          <View style={[styles.bluetoothBadge, { backgroundColor: isConnected ? (connectionType === 'serial' ? 'rgba(37,99,235,0.15)' : 'rgba(124,58,237,0.15)') : undefined }]}>
+            <Text style={{ fontSize: 16 }}>{connectionType === 'serial' ? '🔌' : '📡'}</Text>
           </View>
           <View>
             <Text style={styles.deviceTitle}>
-              {getText(appLanguage, 'deviceStatus')}
+              {isConnected ? (connectionType === 'serial' ? 'ESP32 (USB Serial)' : 'ESP32 (Bluetooth BLE)') : getText(appLanguage, 'deviceStatus')}
             </Text>
             <Text style={[styles.deviceStatus, { color: isConnected ? palette.success : palette.muted }]}>
-              {connectionState === 'scanning' ? 'Scanning...' : connectionState === 'connecting' ? 'Connecting...' : isConnected ? 'Connected' : 'Disconnected'}
+              {connectionState === 'scanning' ? 'Searching...' : connectionState === 'connecting' ? 'Connecting...' : isConnected ? 'Live Streaming' : 'Disconnected'}
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {isConnected && sps > 0 && (
             <View style={{ backgroundColor: 'rgba(34,197,94,0.1)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(34,197,94,0.25)' }}>
               <Text style={{ color: palette.success, fontSize: 10, fontWeight: '700' }}>{sps} sps</Text>
@@ -1866,14 +2104,35 @@ function LiveSignReaderScreen({
               <Text style={{ color: '#6366f1', fontSize: 10, fontWeight: '700' }}>🧠 Ready</Text>
             </View>
           )}
-          <Pressable
-            onPress={onToggleConnection}
-            style={[styles.deviceButton, { backgroundColor: isConnected ? palette.white : palette.lavender }]}
-          >
-            <Text style={styles.deviceButtonText}>
-              {isConnected ? getText(appLanguage, 'disconnect') : getText(appLanguage, 'connect')}
-            </Text>
-          </Pressable>
+          {isConnected ? (
+            <Pressable
+              onPress={onDisconnect || onToggleConnection}
+              style={[styles.deviceButton, { backgroundColor: palette.white, borderColor: palette.red, borderWidth: 1, paddingHorizontal: 12 }]}
+            >
+              <Text style={[styles.deviceButtonText, { color: palette.red }]}>
+                {getText(appLanguage, 'disconnect')}
+              </Text>
+            </Pressable>
+          ) : (
+            <>
+              <Pressable
+                onPress={onConnectSerial}
+                style={[styles.deviceButton, { backgroundColor: '#2563eb', borderColor: '#1d4ed8', paddingHorizontal: 10 }]}
+              >
+                <Text style={[styles.deviceButtonText, { color: '#ffffff', fontWeight: '700' }]}>
+                  🔌 USB Serial
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={onConnectBluetooth}
+                style={[styles.deviceButton, { backgroundColor: '#7c3aed', borderColor: '#6d28d9', paddingHorizontal: 10 }]}
+              >
+                <Text style={[styles.deviceButtonText, { color: '#ffffff', fontWeight: '700' }]}>
+                  📡 Bluetooth
+                </Text>
+              </Pressable>
+            </>
+          )}
         </View>
       </View>
 
@@ -1914,6 +2173,41 @@ function LiveSignReaderScreen({
         )}
       </View>
 
+      {/* Live Sensor Telemetry */}
+      {isConnected && sensorData && (
+        <View style={[styles.card, { marginBottom: 10 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={styles.cardTitle}>🖐️ Live Glove Sensors</Text>
+            <Text style={{ fontSize: 11, color: palette.success, fontWeight: '700' }}>● Live (25Hz)</Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {['RT', 'RI', 'RM', 'RR', 'RP'].map((label, idx) => {
+              const raw = sensorData.flex[idx] ?? 0;
+              const pct = Math.min(100, Math.max(0, Math.round((raw / 4095) * 100)));
+              return (
+                <View key={label} style={{ flex: 1, minWidth: 50, backgroundColor: 'rgba(0,0,0,0.03)', padding: 6, borderRadius: 8, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: palette.muted }}>{label}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: palette.ink, marginVertical: 2 }}>{pct}%</Text>
+                  <View style={{ width: '100%', height: 4, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                    <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pct > 50 ? palette.red : '#6366f1', borderRadius: 2 }} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          {sensorData.imu && sensorData.imu.length >= 6 && (
+            <View style={{ marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 }}>
+              <Text style={{ fontSize: 11, color: palette.muted }}>
+                Accel: <Text style={{ fontWeight: '700', color: palette.ink }}>{sensorData.imu[0]?.toFixed(2)}, {sensorData.imu[1]?.toFixed(2)}, {sensorData.imu[2]?.toFixed(2)}</Text>
+              </Text>
+              <Text style={{ fontSize: 11, color: palette.muted }}>
+                Gyro: <Text style={{ fontWeight: '700', color: palette.ink }}>{sensorData.imu[3]?.toFixed(1)}, {sensorData.imu[4]?.toFixed(1)}, {sensorData.imu[5]?.toFixed(1)}°/s</Text>
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Sentence builder */}
       <View style={[styles.card, { marginBottom: 10 }]}>
         <Text style={[styles.cardTitle, { marginBottom: 6 }]}>📝 Sentence</Text>
@@ -1939,9 +2233,13 @@ function LiveSignReaderScreen({
               paddingVertical: 4,
             }}>
               <Text style={{ fontSize: 15, fontWeight: '500', color: palette.ink }}>
-                {w === '…' ? '…' : (outputLanguage === 'Tamil'
-                  ? (require('./services/sentenceBuilder').translateSign(w, 'ta'))
-                  : (require('./services/sentenceBuilder').translateSign(w, 'si'))
+                {w === '…' ? '…' : (
+                  appLanguage === 'English'
+                    ? (require('./services/sentenceBuilder').translateSign(w, 'en'))
+                    : (outputLanguage === 'Tamil'
+                      ? (require('./services/sentenceBuilder').translateSign(w, 'ta'))
+                      : (require('./services/sentenceBuilder').translateSign(w, 'si'))
+                    )
                 )}
               </Text>
             </View>
@@ -1972,10 +2270,13 @@ function LiveSignReaderScreen({
           <Text style={styles.cardTitle}>📊 Top Predictions</Text>
           {topPredictions.map((pred, i) => (
             <View key={pred.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 }}>
-              <Text style={{ width: 55, fontSize: 12, fontWeight: '700', color: palette.ink, textTransform: 'capitalize' }}>
-                {outputLanguage === 'Tamil'
-                  ? (require('./services/sentenceBuilder').translateSign(pred.label, 'ta'))
-                  : (require('./services/sentenceBuilder').translateSign(pred.label, 'si'))
+              <Text style={{ width: 65, fontSize: 12, fontWeight: '700', color: palette.ink, textTransform: 'capitalize' }}>
+                {appLanguage === 'English'
+                  ? (require('./services/sentenceBuilder').translateSign(pred.label, 'en'))
+                  : (outputLanguage === 'Tamil'
+                    ? (require('./services/sentenceBuilder').translateSign(pred.label, 'ta'))
+                    : (require('./services/sentenceBuilder').translateSign(pred.label, 'si'))
+                  )
                 }
               </Text>
               <View style={{ flex: 1, height: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' }}>
@@ -2000,6 +2301,9 @@ function LiveSignReaderScreen({
 function HomeScreen({
   statusText,
   isConnected,
+  connectionType,
+  onConnectSerial,
+  onConnectBluetooth,
   onToggleConnection,
   lastGesture,
   onGestureSample,
@@ -2013,6 +2317,9 @@ function HomeScreen({
 }: {
   statusText: string;
   isConnected: boolean;
+  connectionType?: ConnectionType | null;
+  onConnectSerial?: () => void;
+  onConnectBluetooth?: () => void;
   onToggleConnection: () => void;
   lastGesture: string;
   onGestureSample: () => void;
@@ -2037,12 +2344,12 @@ function HomeScreen({
 
       <View style={styles.deviceCard}>
         <View style={styles.deviceLeft}>
-          <View style={styles.bluetoothBadge}>
-            <Image source={bluetoothIcon} style={styles.bluetoothIcon} />
+          <View style={[styles.bluetoothBadge, { backgroundColor: isConnected ? (connectionType === 'serial' ? 'rgba(37,99,235,0.15)' : 'rgba(124,58,237,0.15)') : undefined }]}>
+            <Text style={{ fontSize: 16 }}>{connectionType === 'serial' ? '🔌' : '📡'}</Text>
           </View>
           <View>
             <Text style={styles.deviceTitle}>
-              {getText(appLanguage, 'deviceStatus')}
+              {isConnected ? (connectionType === 'serial' ? 'ESP32 (USB Serial)' : 'ESP32 (Bluetooth BLE)') : getText(appLanguage, 'deviceStatus')}
             </Text>
             <Text
               style={[
@@ -2054,19 +2361,44 @@ function HomeScreen({
             </Text>
           </View>
         </View>
-        <Pressable
-          onPress={onToggleConnection}
-          style={[
-            styles.deviceButton,
-            { backgroundColor: isConnected ? palette.white : palette.lavender },
-          ]}
-        >
-          <Text style={styles.deviceButtonText}>
-            {isConnected
-              ? getText(appLanguage, 'disconnect')
-              : getText(appLanguage, 'connect')}
-          </Text>
-        </Pressable>
+        {isConnected ? (
+          <Pressable
+            onPress={onToggleConnection}
+            style={[
+              styles.deviceButton,
+              { backgroundColor: palette.white, borderColor: palette.red, borderWidth: 1, paddingHorizontal: 12 },
+            ]}
+          >
+            <Text style={[styles.deviceButtonText, { color: palette.red }]}>
+              {getText(appLanguage, 'disconnect')}
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <Pressable
+              onPress={onConnectSerial}
+              style={[
+                styles.deviceButton,
+                { backgroundColor: '#2563eb', borderColor: '#1d4ed8', paddingHorizontal: 10 },
+              ]}
+            >
+              <Text style={[styles.deviceButtonText, { color: '#ffffff', fontWeight: '700' }]}>
+                🔌 USB
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onConnectBluetooth}
+              style={[
+                styles.deviceButton,
+                { backgroundColor: '#7c3aed', borderColor: '#6d28d9', paddingHorizontal: 10 },
+              ]}
+            >
+              <Text style={[styles.deviceButtonText, { color: '#ffffff', fontWeight: '700' }]}>
+                📡 BLE
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {/* ─── Live Sign Reader Card ─── */}
@@ -3029,6 +3361,11 @@ const createStyles = (palette: ThemePalette) =>
     alignItems: 'center',
     justifyContent: 'center',
   },
+  splashLogoImage: {
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
+  },
   splashLogoText: {
     color: palette.white,
     fontWeight: '800',
@@ -3213,11 +3550,40 @@ const createStyles = (palette: ThemePalette) =>
   },
   authContainer: {
     flex: 1,
-    backgroundColor: palette.white,
+    backgroundColor: palette.soft,
   },
   authContent: {
-    padding: 24,
-    paddingTop: 72,
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 16,
+  },
+  authCard: {
+    width: '100%',
+    maxWidth: 440,
+    backgroundColor: palette.white,
+    borderRadius: 22,
+    paddingHorizontal: 30,
+    paddingVertical: 34,
+    borderWidth: 1,
+    borderColor: palette.border,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 20px 45px -12px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0, 0, 0, 0.04)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.09,
+        shadowRadius: 16,
+        elevation: 5,
+      },
+    }),
+  },
+  authForm: {
+    marginTop: 22,
+    width: '100%',
   },
   authBrandRow: {
     flexDirection: 'row',
@@ -3226,8 +3592,8 @@ const createStyles = (palette: ThemePalette) =>
     gap: 6,
   },
   authBrand: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: palette.ink,
     textAlign: 'center',
     letterSpacing: 1,
@@ -3240,36 +3606,78 @@ const createStyles = (palette: ThemePalette) =>
     textAlign: 'center',
     color: palette.muted,
     fontSize: 12,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 6,
   },
   inputLabel: {
-    marginTop: 18,
+    marginTop: 16,
     marginBottom: 6,
     color: palette.ink,
     fontWeight: '600',
+    fontSize: 13,
   },
   input: {
     backgroundColor: palette.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: palette.border,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 15,
     paddingVertical: 12,
+    fontSize: 14,
     color: palette.ink,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }),
+  },
+  inputFocused: {
+    borderColor: palette.red,
+    backgroundColor: palette.white,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 0 3px rgba(238, 62, 66, 0.15)',
+      },
+    }),
   },
   forgotText: {
-    textAlign: 'right',
+    color: palette.red,
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  authDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    gap: 12,
+  },
+  authDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: palette.border,
+  },
+  authDividerText: {
+    fontSize: 12,
     color: palette.muted,
-    marginTop: 8,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   authFooter: {
     textAlign: 'center',
     color: palette.muted,
     marginTop: 18,
+    fontSize: 13,
   },
   linkText: {
     color: palette.red,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   rememberRow: {
     flexDirection: 'row',
@@ -3290,9 +3698,23 @@ const createStyles = (palette: ThemePalette) =>
   primaryButton: {
     marginTop: 20,
     backgroundColor: palette.red,
-    borderRadius: 14,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingVertical: 13,
     alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        boxShadow: '0 4px 14px rgba(238, 62, 66, 0.3)',
+      },
+      default: {
+        shadowColor: palette.red,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+      },
+    }),
   },
   primaryButtonDisabled: {
     opacity: 0.6,
@@ -3300,15 +3722,23 @@ const createStyles = (palette: ThemePalette) =>
   primaryButtonText: {
     color: palette.white,
     fontWeight: '700',
+    fontSize: 15,
+    letterSpacing: 0.4,
   },
   outlineButton: {
-    marginTop: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+    marginTop: 0,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: palette.border,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: palette.white,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+      },
+    }),
   },
   outlineButtonDisabled: {
     opacity: 0.6,
@@ -3326,6 +3756,7 @@ const createStyles = (palette: ThemePalette) =>
   outlineButtonText: {
     color: palette.ink,
     fontWeight: '600',
+    fontSize: 14,
   },
   header: {
     paddingHorizontal: 20,
@@ -3345,6 +3776,24 @@ const createStyles = (palette: ThemePalette) =>
     fontWeight: '700',
     color: palette.red,
     letterSpacing: 1,
+  },
+  headerLogoImage: {
+    width: 110,
+    height: 40,
+    resizeMode: 'contain',
+  },
+  authLogoImage: {
+    width: 180,
+    height: 100,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+  },
+  firstTimeLogoImage: {
+    width: 160,
+    height: 90,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginVertical: 8,
   },
   menuButton: {
     borderWidth: 1,

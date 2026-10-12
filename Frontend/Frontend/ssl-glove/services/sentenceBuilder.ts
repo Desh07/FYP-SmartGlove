@@ -13,16 +13,22 @@ export type SentenceState = {
 
 // ─── Sign → Language Translation Map ───
 const TRANSLATIONS: Record<string, Record<string, string>> = {
-  'HELLO': { en: 'Hello', si: 'ආයුබෝවන්', ta: 'வணக்கம்' },
-  'GOOD':  { en: 'Good',  si: 'හොඳයි',    ta: 'நன்று' },
-  'MILK':  { en: 'Milk',  si: 'කිරි',     ta: 'பால்' },
-  'BAD':   { en: 'Bad',   si: 'නරකයි',    ta: 'மோசம்' },
-  'LOVE':  { en: 'Love',  si: 'ආදරය',    ta: 'அன்பு' },
-  'CALL':  { en: 'Call',  si: 'ඇමතුමක්',  ta: 'அழை' },
+  'HELLO':    { en: 'Hello',    si: 'ආයුබෝවන්',      ta: 'வணக்கம்' },
+  'CALL ME':  { en: 'Call me',  si: 'මට කතා කරන්න', ta: 'என்னை அழைக்கவும்' },
+  'VICTORY':  { en: 'Victory',  si: 'ජයග්‍රහණය',    ta: 'வெற்றி' },
+  'MILK':     { en: 'Milk',     si: 'කිරි',          ta: 'பால்' },
+  'OK':       { en: 'OK',       si: 'හරි',           ta: 'சரி' },
+  'QUESTION': { en: 'Question', si: 'ප්‍රශ්නය',      ta: 'கேள்வி' },
+  'YOU':      { en: 'You',      si: 'ඔබ',            ta: 'நீங்கள்' },
+  'GOOD':     { en: 'Good',     si: 'හොඳයි',         ta: 'நன்று' },
+  'BAD':      { en: 'Bad',      si: 'නරකයි',        ta: 'மோசம்' },
+  'LOVE':     { en: 'Love',     si: 'ආදරය',         ta: 'அன்பு' },
+  'CALL':     { en: 'Call',     si: 'ඇමතුමක්',       ta: 'அழை' },
 };
 
 export function translateSign(sign: string, lang: 'en' | 'si' | 'ta'): string {
-  return TRANSLATIONS[sign]?.[lang] ?? sign;
+  const upper = (sign || '').toUpperCase();
+  return TRANSLATIONS[upper]?.[lang] ?? TRANSLATIONS[sign]?.[lang] ?? sign;
 }
 
 export class SentenceBuilder {

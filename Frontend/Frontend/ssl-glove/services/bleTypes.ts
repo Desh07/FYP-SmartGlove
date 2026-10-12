@@ -13,13 +13,16 @@ export type GloveDevice = {
 
 export type ConnectionState = 'disconnected' | 'scanning' | 'connecting' | 'connected';
 
+export type ConnectionType = 'serial' | 'bluetooth';
+
 export interface IGloveConnection {
-  scan(): Promise<GloveDevice[]>;
+  scan(preferredMode?: ConnectionType): Promise<GloveDevice[]>;
   connect(deviceId: string): Promise<void>;
   disconnect(): Promise<void>;
   onData(callback: (data: SensorData) => void): void;
   offData(callback: (data: SensorData) => void): void;
   getState(): ConnectionState;
+  getConnectionType?(): ConnectionType | null;
   onStateChange(callback: (state: ConnectionState) => void): void;
 }
 

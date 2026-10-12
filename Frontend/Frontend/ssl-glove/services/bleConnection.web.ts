@@ -3,6 +3,7 @@ import {
   BLE_CHAR_UUID,
   BLE_DEVICE_NAME,
   parseBinaryPayload,
+  parseTextDataLine,
   type SensorData,
   type GloveDevice,
   type ConnectionState,
@@ -13,6 +14,9 @@ declare global {
   interface Navigator {
     bluetooth?: {
       requestDevice(options: any): Promise<BluetoothDevice>;
+    };
+    serial?: {
+      requestPort(options?: any): Promise<any>;
     };
   }
   interface BluetoothDevice {
@@ -43,33 +47,61 @@ declare global {
 export class WebBleConnection implements IGloveConnection {
   private device: BluetoothDevice | null = null;
   private characteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private serialPort: any = null;
+  private serialReader: any = null;
+  private serialBuffer: string = '';
   private state: ConnectionState = 'disconnected';
   private dataCallbacks: Set<(data: SensorData) => void> = new Set();
   private stateCallbacks: Set<(state: ConnectionState) => void> = new Set();
 
-  async scan(): Promise<GloveDevice[]> {
-    console.log('[WebBleConnection] scan() initiated');
-    if (!(navigator as any).bluetooth) {
-      console.error('[WebBleConnection] Navigator has no bluetooth object. Check secure context (HTTPS/localhost) and browser support.');
-      throw new Error('Web Bluetooth not supported. Use Chrome/Edge or verify secure context.');
+  getConnectionType(): ConnectionType | null {
+    if (this.state !== 'connected') return null;
+    return this.serialPort ? 'serial' : (this.device ? 'bluetooth' : null);
+  }
+
+  async scan(preferredMode?: ConnectionType): Promise<GloveDevice[]> {
+    const hasSerial = typeof navigator !== 'undefined' && 'serial' in navigator;
+    const hasBluetooth = typeof navigator !== 'undefined' && 'bluetooth' in navigator;
+
+    if (!hasSerial && !hasBluetooth) {
+      throw new Error('Web Serial and Web Bluetooth not supported in this browser. Please use Chrome or Edge.');
+    }
+
+    let useSerial = false;
+    if (preferredMode === 'serial') {
+      if (!hasSerial) throw new Error('Web Serial not supported in this browser. Please use Chrome or Edge.');
+      useSerial = true;
+    } else if (preferredMode === 'bluetooth') {
+      if (!hasBluetooth) throw new Error('Web Bluetooth not supported in this browser.');
+      useSerial = false;
+    } else {
+      useSerial = hasSerial;
+      if (hasSerial && hasBluetooth && typeof window !== 'undefined') {
+        useSerial = window.confirm(
+          'Connect to ESP32 HandGlow:\n\n• Click [OK] for USB Cable (Serial Port)\n• Click [Cancel] for Bluetooth (Wireless BLE)'
+        );
+      }
     }
 
     this.setState('scanning');
 
     try {
-      console.log('[WebBleConnection] Requesting bluetooth device. Filtering by Service UUID:', BLE_SERVICE_UUID);
-      const device = await (navigator as any).bluetooth.requestDevice({
-        filters: [{ services: [BLE_SERVICE_UUID] }],
-      });
-
-      console.log('[WebBleConnection] Device selected by user:', device.name, '(', device.id, ')');
-      this.device = device;
-      return [{ id: device.id, name: device.name || BLE_DEVICE_NAME }];
+      if (useSerial) {
+        const port = await (navigator as any).serial.requestPort();
+        this.serialPort = port;
+        this.device = null;
+        return [{ id: 'serial-port', name: 'ESP32 (USB Serial)' }];
+      } else {
+        const device = await (navigator as any).bluetooth.requestDevice({
+          filters: [{ services: [BLE_SERVICE_UUID] }],
+        });
+        this.device = device;
+        this.serialPort = null;
+        return [{ id: device.id, name: device.name || BLE_DEVICE_NAME }];
+      }
     } catch (err: any) {
-      console.error('[WebBleConnection] scan() failed with error:', err);
       this.setState('disconnected');
       if (err.name === 'NotFoundError') {
-        console.log('[WebBleConnection] User cancelled the device chooser popup.');
         return [];
       }
       throw err;
@@ -77,46 +109,87 @@ export class WebBleConnection implements IGloveConnection {
   }
 
   async connect(deviceId?: string): Promise<void> {
-    console.log('[WebBleConnection] connect() initiated for device:', deviceId);
-    if (!this.device) {
-      console.error('[WebBleConnection] No active device selected. Call scan() first.');
-      throw new Error('No device selected. Call scan() first.');
+    if (!this.serialPort && !this.device) {
+      throw new Error('No device selected. Please click Connect first.');
     }
 
     this.setState('connecting');
 
     try {
-      console.log('[WebBleConnection] Connecting to GATT server...');
-      const server = await this.device.gatt!.connect();
-      console.log('[WebBleConnection] GATT server connected. Fetching service:', BLE_SERVICE_UUID);
+      if (this.serialPort) {
+        await this.serialPort.open({ baudRate: 115200 });
 
-      // Get the HandGlow service
-      const service = await server.getPrimaryService(BLE_SERVICE_UUID);
-      console.log('[WebBleConnection] Service fetched. Fetching characteristic:', BLE_CHAR_UUID);
+        const textDecoder = new (window as any).TextDecoderStream();
+        this.serialPort.readable.pipeTo(textDecoder.writable).catch(() => {});
+        this.serialReader = textDecoder.readable.getReader();
+        this.serialBuffer = '';
+        this.setState('connected');
 
-      // Get the sensor data characteristic
-      this.characteristic = await service.getCharacteristic(BLE_CHAR_UUID);
-      console.log('[WebBleConnection] Characteristic fetched. Starting notifications...');
+        this.startSerialReadLoop();
+        return;
+      }
 
-      // Subscribe to notifications
-      await this.characteristic.startNotifications();
-      this.characteristic.addEventListener(
-        'characteristicvaluechanged',
-        this.handleNotification
-      );
+      if (this.device) {
+        const server = await this.device.gatt!.connect();
+        const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+        this.characteristic = await service.getCharacteristic(BLE_CHAR_UUID);
 
-      // Handle unexpected disconnection
-      this.device.addEventListener('gattserverdisconnected', this.handleDisconnect);
+        await this.characteristic.startNotifications();
+        this.characteristic.addEventListener(
+          'characteristicvaluechanged',
+          this.handleNotification
+        );
+        this.device.addEventListener('gattserverdisconnected', this.handleDisconnect);
 
-      this.setState('connected');
+        this.setState('connected');
+      }
     } catch (err) {
       this.setState('disconnected');
       throw err;
     }
   }
 
+  private async startSerialReadLoop(): Promise<void> {
+    try {
+      while (this.serialReader) {
+        const { value, done } = await this.serialReader.read();
+        if (done) break;
+        if (!value) continue;
+
+        this.serialBuffer += value;
+        const lines = this.serialBuffer.split(/\r?\n/);
+        this.serialBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const sensorData = parseTextDataLine(line);
+          if (sensorData) {
+            this.dataCallbacks.forEach(cb => cb(sensorData));
+          }
+        }
+      }
+    } catch (_) {
+    } finally {
+      this.setState('disconnected');
+    }
+  }
+
   async disconnect(): Promise<void> {
     try {
+      if (this.serialReader) {
+        try {
+          await this.serialReader.cancel();
+          this.serialReader.releaseLock();
+        } catch (_) {}
+        this.serialReader = null;
+      }
+
+      if (this.serialPort) {
+        try {
+          await this.serialPort.close();
+        } catch (_) {}
+        this.serialPort = null;
+      }
+
       if (this.characteristic) {
         this.characteristic.removeEventListener(
           'characteristicvaluechanged',
@@ -124,9 +197,7 @@ export class WebBleConnection implements IGloveConnection {
         );
         try {
           await this.characteristic.stopNotifications();
-        } catch (_) {
-          // May fail if already disconnected
-        }
+        } catch (_) {}
         this.characteristic = null;
       }
 
@@ -134,9 +205,9 @@ export class WebBleConnection implements IGloveConnection {
         this.device.gatt.disconnect();
       }
     } catch (_) {
-      // Best-effort cleanup
     } finally {
       this.device = null;
+      this.serialPort = null;
       this.setState('disconnected');
     }
   }
@@ -156,8 +227,6 @@ export class WebBleConnection implements IGloveConnection {
   onStateChange(callback: (state: ConnectionState) => void): void {
     this.stateCallbacks.add(callback);
   }
-
-  // ─── Private ───
 
   private setState(newState: ConnectionState): void {
     this.state = newState;
