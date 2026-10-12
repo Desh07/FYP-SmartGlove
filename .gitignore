@@ -18,4 +18,5 @@ env/
 # Generated and log files
 Frontend.zip
 func-output.log
+powershell.cmd
 
