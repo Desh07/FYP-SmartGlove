@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ssl-glove",
+    "name": "Smart Glove",
     "slug": "ssl-glove",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,6 +19,7 @@
       }
     },
     "android": {
+      "package": "com.smartglove.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
